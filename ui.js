@@ -2,7 +2,9 @@
 import { ValidationUtils } from "./utils.js";
 
 class UI {
-  constructor() {
+  constructor(driveKey) {
+    this.driveKey = driveKey;
+
     this.elements = {
       uploadForm: document.querySelector("#upload-form"),
       fileInput: document.querySelector("#file-input"),
@@ -17,9 +19,33 @@ class UI {
       refreshButton: document.querySelector("#refresh-button"),
       uploadContainer: document.querySelector("#upload-container"),
       tabs: document.querySelectorAll(".tab"),
+      loader: document.querySelector("#loader"),
+      keyValue: document.querySelector("#key-value"),
+      keyDisplay: document.querySelector("#key-display"),
     };
 
     this.initializeEventListeners();
+    this.hideLoader();
+    this.updateKeyDisplay();
+  }
+
+  hideLoader() {
+    if (this.elements.loader) {
+      this.elements.loader.classList.add("hidden");
+    }
+  }
+
+  updateKeyDisplay() {
+    if (!this.driveKey) {
+      return;
+    }
+
+    if (this.elements.keyValue) {
+      this.elements.keyValue.textContent = this.driveKey;
+    }
+    if (this.elements.keyDisplay) {
+      this.elements.keyDisplay.classList.remove("hidden");
+    }
   }
 
   initializeEventListeners() {
@@ -76,6 +102,8 @@ class UI {
     const file = this.elements.fileInput.files[0];
     const validation = ValidationUtils.validateUploadFile(file);
 
+    console.log("validation", validation);
+
     if (!validation.valid) {
       this.setStatus(validation.message, "error");
       return;
@@ -89,6 +117,7 @@ class UI {
       const uploadEvent = new CustomEvent("fileUpload", {
         detail: { file },
       });
+      console.log("uploadEvent", uploadEvent);
       document.dispatchEvent(uploadEvent);
     } catch (error) {
       console.error("Upload error:", error);
@@ -207,7 +236,7 @@ class UI {
 
   // Update gallery display
   async updateGallery(blobs, entries) {
-    if (entries.length === 0) {
+    if (entries && entries.length === 0) {
       this.elements.galleryGrid.innerHTML = "";
       this.elements.galleryEmpty.style.display = "block";
       return;

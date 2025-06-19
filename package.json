@@ -23,11 +23,13 @@
   "dependencies": {
     "autobase": "^7.13.1",
     "b4a": "^1.6.7",
+    "blind-pairing": "^2.3.1",
     "corestore": "^7.4.5",
     "debounceify": "^1.1.0",
-    "hyperdrive": "^12.3.0",
+    "hyperdrive": "^13.0.1",
     "hyperswarm": "^4.11.7",
     "localdrive": "^2.2.0",
-    "pear-stdio": "^1.0.1"
+    "pear-stdio": "^1.0.1",
+    "z32": "^1.1.0"
   }
 }
