@@ -1,85 +1,52 @@
-# Keet GIFs App
+# 🎬 Keet GIFs
 
-A decentralized GIF and WebP sharing application built with Hyperdrive and Pear.
+**Decentralized GIF sharing with zero servers, zero censorship, zero limits.**
 
-## Project Structure
+Share your favorite GIFs and WebP images directly with friends using peer-to-peer technology. No accounts, no upload limits, no corporate overlords.
 
-The application has been refactored to follow a clean separation of concerns:
+## ✨ Features
 
-### Core Files
+- 🚀 **Instant sharing** - Upload and share GIFs in seconds
+- 🔒 **Private by default** - Your files stay between you and your friends
+- 📱 **Drag & drop** - Simple, intuitive interface
+- 🖼️ **Gallery view** - Browse all your shared images
+- 🌐 **P2P powered** - Built on Hyperdrive and Pear
 
-- **`app.js`** - Main application entry point
-
-  - Handles Hyperdrive initialization and business logic
-  - Manages file uploads and gallery data
-  - Coordinates between UI and data layer
-
-- **`ui.js`** - User Interface module
-
-  - Handles all DOM manipulation and event listeners
-  - Manages form interactions, drag & drop, and gallery display
-  - Communicates with main app via custom events
-
-- **`utils.js`** - Utility functions
-  - File validation and type checking
-  - Filename generation and extension handling
-  - Date formatting utilities
-
-### Key Improvements
-
-1. **Reduced Duplication**:
-
-   - File validation logic centralized in `ValidationUtils`
-   - Filename generation moved to `FileUtils`
-   - Common DOM queries cached in UI class
-
-2. **Separation of Concerns**:
-
-   - UI logic separated from business logic
-   - Hyperdrive operations isolated in main app class
-   - Utility functions reusable across modules
-
-3. **Better Maintainability**:
-   - Clear module boundaries
-   - Consistent error handling
-   - Event-driven communication between modules
-
-## Architecture
-
-```
-app.js (Main App)
-├── Hyperdrive setup & management
-├── File upload handling
-├── Gallery data management
-└── Event coordination
-
-ui.js (UI Module)
-├── DOM manipulation
-├── Event listeners
-├── Form handling
-└── Gallery display
-
-utils.js (Utilities)
-├── File validation
-├── Filename generation
-└── Helper functions
-```
-
-## Usage
-
-The application allows users to:
-
-- Upload GIF and WebP files via drag & drop or file picker
-- View uploaded files in a gallery
-- Click on images to view full size
-- Switch between upload and gallery tabs
-
-## Development
-
-To run the application:
+## 🚀 Quick Start
 
 ```bash
-npm start
+pear run -d .
 ```
 
-The app uses Pear's decentralized infrastructure for peer-to-peer file sharing.
+That's it! Your decentralized GIF sharing app is ready to go.
+
+## 🏗️ Architecture
+
+Built with modern web technologies and decentralized protocols:
+
+- **Hyperdrive** - Decentralized file storage
+- **Pear** - P2P networking layer
+- **Autobase** - Multi-writer database
+- **Hyperswarm** - Peer discovery
+
+## 📁 Project Structure
+
+```
+keet-gifs/
+├── app.js      # Main application logic
+├── ui.js       # User interface & interactions
+├── utils.js    # Helper functions
+└── index.html  # App entry point
+```
+
+## 🎯 How It Works
+
+1. **Upload** - Drag & drop your GIFs or click to browse
+2. **Share** - Get a unique key to share with friends
+3. **Enjoy** - View and download shared images instantly
+
+No servers, no middlemen, just pure peer-to-peer sharing.
+
+---
+
+_Built with ❤️ for the decentralized web_
