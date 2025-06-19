@@ -1,0 +1,33 @@
+{
+  "name": "keet-gifs",
+  "main": "index.html",
+  "pear": {
+    "name": "keet-gifs",
+    "type": "desktop",
+    "gui": {
+      "backgroundColor": "#1F2430",
+      "height": "540",
+      "width": "720"
+    }
+  },
+  "type": "module",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev": "pear run -d .",
+    "test": "brittle test/*.test.js"
+  },
+  "devDependencies": {
+    "brittle": "^3.0.0",
+    "pear-interface": "^1.0.0"
+  },
+  "dependencies": {
+    "autobase": "^7.13.1",
+    "b4a": "^1.6.7",
+    "corestore": "^7.4.5",
+    "debounceify": "^1.1.0",
+    "hyperdrive": "^12.3.0",
+    "hyperswarm": "^4.11.7",
+    "localdrive": "^2.2.0",
+    "pear-stdio": "^1.0.1"
+  }
+}
