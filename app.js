@@ -1,5 +1,7 @@
 import Hyperswarm from "hyperswarm";
 import Hyperdrive from "hyperdrive";
+import Hyperbee from "hyperbee";
+import Hyperblobs from "hyperblobs";
 import BlindPairing from "blind-pairing";
 import Autobase from "autobase";
 import Corestore from "corestore";
@@ -33,15 +35,7 @@ class GifApp {
       this.store.replicate(conn);
     });
 
-    const drive = new Hyperdrive(this.store);
-
-    await drive.ready();
-
-    this.autobase = new Autobase(
-      this.store,
-      key ? key : null,
-      new GifView(drive)
-    );
+    this.autobase = new Autobase(this.store, key ? key : null, new GifView());
 
     // wait for the autobase instance to be initialized
     await this.autobase.ready();
@@ -132,7 +126,7 @@ class GifApp {
       // Get all entries from the drive
       const entries = [];
       console.log("loadGallery", this.autobase);
-      const { drive } = this.autobase.view;
+      const drive = this.autobase.view;
       const stream = await drive.entries();
 
       for await (const entry of stream) {
@@ -154,10 +148,6 @@ class GifApp {
 }
 
 class GifView {
-  constructor(drive) {
-    this.drive = drive;
-  }
-
   valueEncoding = "json";
 
   async apply(nodes, view, host) {
@@ -171,21 +161,42 @@ class GifView {
 
         console.log("value", value);
 
-        await view.drive.put(value.filename, value.blob);
+        await view.put(value.filename, value.blob);
 
         console.log("done applying node", node);
+
+        // Refresh the gallery if open
       }
     }
+
+    setTimeout(() => {
+      document.dispatchEvent(new CustomEvent("refreshGallery"));
+    }, 1000);
   }
 
-  open(store) {
-    console.log("opening state", store, this.bootstrap);
+  open(store, base) {
+    console.log("opening state", base, store, this.bootstrap);
 
-    return { drive: this.drive };
+    // Create underlying hypercore data structures without hyperdrive to work
+    // around readying immediately
+    const db = new Hyperbee(store.get("db"), {
+      keyEncoding: "utf-8",
+      valueEncoding: "json",
+      metadata: { contentFeed: null },
+      extension: false,
+    });
+    base.db = db;
+
+    // Name for blobs doesnt need to be derived from the hyperbee key since
+    // there is a unique namespace for the viewstore
+    const blobs = new Hyperblobs(store.get("blobs"));
+    const drive = new Hyperdrive(base.store, { _db: db });
+    drive.blobs = blobs;
+    return drive;
   }
 
   async close(view) {
-    await view.drive.close();
+    await view.close();
   }
 }
 

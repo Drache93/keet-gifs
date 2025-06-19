@@ -24,6 +24,8 @@ class UI {
       keyDisplay: document.querySelector("#key-display"),
     };
 
+    this.currentTab = "upload";
+
     this.initializeEventListeners();
     this.hideLoader();
     this.updateKeyDisplay();
@@ -83,6 +85,14 @@ class UI {
     // Refresh button
     this.elements.refreshButton.addEventListener("click", () => {
       this.loadGallery();
+    });
+
+    // Refresh gallery on custom event
+    document.addEventListener("refreshGallery", () => {
+      console.log("refreshGallery");
+      if (this.currentTab === "gallery") {
+        this.loadGallery();
+      }
     });
 
     // Global remove preview function
@@ -214,9 +224,11 @@ class UI {
     if (targetTab === "upload") {
       this.elements.uploadContainer.style.display = "flex";
       this.elements.gallery.classList.remove("active");
+      this.currentTab = "upload";
     } else if (targetTab === "gallery") {
       this.elements.uploadContainer.style.display = "none";
       this.elements.gallery.classList.add("active");
+      this.currentTab = "gallery";
       this.loadGallery();
     }
   }
@@ -333,19 +345,12 @@ class UI {
   onUploadSuccess(filename, file) {
     this.setStatus(`Successfully uploaded ${filename}`, "success");
 
-    // Show preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      this.elements.preview.innerHTML = `<img src="${e.target.result}" alt="Uploaded ${filename}" />`;
-      this.elements.preview.classList.remove("hidden");
-      this.elements.fileInputContainer.classList.add("has-preview");
-      this.elements.uploadInfo.classList.add("hidden");
-    };
-    reader.readAsDataURL(file);
-
-    // Clear file input
+    // Clear the form completely
     this.elements.fileInput.value = "";
-    this.elements.uploadButton.disabled = false;
+    this.elements.uploadButton.disabled = true;
+    this.elements.preview.classList.add("hidden");
+    this.elements.fileInputContainer.classList.remove("has-preview");
+    this.elements.uploadInfo.classList.remove("hidden");
 
     // Refresh gallery if it's currently active
     if (this.elements.gallery.classList.contains("active")) {
