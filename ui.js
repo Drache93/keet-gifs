@@ -206,7 +206,7 @@ class UI {
   }
 
   // Update gallery display
-  updateGallery(entries) {
+  async updateGallery(blobs, entries) {
     if (entries.length === 0) {
       this.elements.galleryGrid.innerHTML = "";
       this.elements.galleryEmpty.style.display = "block";
@@ -223,8 +223,10 @@ class UI {
       const gifItem = document.createElement("div");
       gifItem.className = "gif-item";
 
+      const buff = await blobs.get(value.blob);
+
       // Convert buffer to blob URL for display
-      const blob = new Blob([value], {
+      const blob = new Blob([buff], {
         type: key.endsWith(".gif") ? "image/gif" : "image/webp",
       });
       const url = URL.createObjectURL(blob);

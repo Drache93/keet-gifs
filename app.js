@@ -77,14 +77,17 @@ class GifApp {
       const entries = [];
       const stream = await this.drive.entries();
 
-      for await (const [key, value] of stream) {
+      for await (const entry of stream) {
+        const { key, value } = entry;
         if (FileUtils.isImageFile(key)) {
           entries.push({ key, value });
         }
       }
 
+      const blobs = await this.drive.getBlobs();
+
       // Update UI with gallery data
-      this.ui.updateGallery(entries);
+      this.ui.updateGallery(blobs, entries);
     } catch (error) {
       console.error("Error loading gallery:", error);
       this.ui.updateGallery([]);
