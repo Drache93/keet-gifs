@@ -24,10 +24,10 @@ That's it! Your decentralized GIF sharing app is ready to go.
 
 Built with modern web technologies and decentralized protocols:
 
-- **Hyperdrive** - Decentralized file storage
-- **Pear** - P2P networking layer
-- **Autobase** - Multi-writer database
-- **Hyperswarm** - Peer discovery
+- **[Hyperdrive](https://docs.pears.com/building-blocks/hyperdrive)** - Decentralized file storage
+- **[Pear](https://docs.pears.com/)** - P2P networking layer
+- **[Autobase](https://docs.pears.com/building-blocks/autobase)** - Multi-writer database
+- **[Hyperswarm](https://docs.pears.com/building-blocks/hyperswarm)** - Peer discovery
 
 ## 📁 Project Structure
 
@@ -49,4 +49,4 @@ No servers, no middlemen, just pure peer-to-peer sharing.
 
 ---
 
-_Built with ❤️ for the decentralized web_
+_Built with ❤️ for the decentralized web_ and massive support from the :pear: community
