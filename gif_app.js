@@ -165,9 +165,134 @@ export class GifApp {
       });
 
       console.log("✅ New writer added successfully");
+
+      // Show popup notification
+      this.showWriterJoinedNotification(
+        writerKey.toString("hex").substr(0, 16)
+      );
     } catch (error) {
       console.error("Error in onAddMember:", error);
     }
+  }
+
+  // Show notification when a new writer joins
+  showWriterJoinedNotification(writerId) {
+    // Create notification element
+    const notification = document.createElement("div");
+    notification.className = "writer-notification";
+    notification.innerHTML = `
+      <div class="notification-content">
+        <div class="notification-icon">👋</div>
+        <div class="notification-text">
+          <strong>New collaborator joined!</strong>
+          <small>Writer ${writerId}...</small>
+        </div>
+        <button class="notification-close">✕</button>
+      </div>
+    `;
+
+    // Add styles
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #001601;
+      border: 2px solid #b0d944;
+      border-radius: 8px;
+      padding: 1rem;
+      color: #b0d944;
+      font-family: monospace;
+      z-index: 10001;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      max-width: 300px;
+    `;
+
+    // Add content styles
+    const content = notification.querySelector(".notification-content");
+    content.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    `;
+
+    const icon = notification.querySelector(".notification-icon");
+    icon.style.cssText = `
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    `;
+
+    const text = notification.querySelector(".notification-text");
+    text.style.cssText = `
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    `;
+
+    text.querySelector("strong").style.cssText = `
+      font-size: 0.9rem;
+      color: #b0d944;
+    `;
+
+    text.querySelector("small").style.cssText = `
+      font-size: 0.8rem;
+      color: #888;
+    `;
+
+    const closeBtn = notification.querySelector(".notification-close");
+    closeBtn.style.cssText = `
+      background: transparent;
+      border: 1px solid #b0d944;
+      color: #b0d944;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+    `;
+
+    closeBtn.addEventListener("mouseenter", () => {
+      closeBtn.style.background = "#b0d944";
+      closeBtn.style.color = "#001601";
+    });
+
+    closeBtn.addEventListener("mouseleave", () => {
+      closeBtn.style.background = "transparent";
+      closeBtn.style.color = "#b0d944";
+    });
+
+    // Add to DOM
+    document.body.appendChild(notification);
+
+    // Animate in
+    setTimeout(() => {
+      notification.style.transform = "translateX(0)";
+    }, 100);
+
+    // Handle close button
+    closeBtn.addEventListener("click", () => {
+      notification.style.transform = "translateX(100%)";
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 300);
+    });
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.style.transform = "translateX(100%)";
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 300);
+      }
+    }, 5000);
   }
 
   // Called when joining the network is successful

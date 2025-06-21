@@ -5,6 +5,12 @@ import Hyperblobs from "hyperblobs";
 export class GifView {
   valueEncoding = "json";
 
+  _initialised = false;
+
+  get initialised() {
+    return this._initialised;
+  }
+
   async apply(nodes, view, host) {
     console.log("applying nodes", nodes, view);
     let gifsChanged = false;
@@ -49,6 +55,10 @@ export class GifView {
   open(store, base) {
     console.log("opening state", base, store, this.bootstrap);
 
+    if (base.store) {
+      this._initialised = true;
+    }
+
     // Create underlying hypercore data structures without hyperdrive to work
     // around readying immediately
     const db = new Hyperbee(store.get("db"), {
@@ -72,6 +82,10 @@ export class GifView {
   }
 
   async close(view) {
-    await view.close();
+    try {
+      await view.close();
+    } catch (error) {
+      console.log("error", error);
+    }
   }
 }
