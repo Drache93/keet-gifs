@@ -407,8 +407,15 @@ export class GifApp {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = b4a.from(arrayBuffer);
 
-      // Generate unique filename with timestamp
-      const filename = FileUtils.generateFilename(file.name);
+      // Use original filename
+      const filename = file.name;
+
+      // Check if the file already exists
+      const existingFile = await this.autobase.view.get(filename);
+      if (existingFile) {
+        this.ui.onUploadError(new Error("File already exists"));
+        return;
+      }
 
       // Store file in the drive
       await this.autobase.append({
@@ -435,6 +442,7 @@ export class GifApp {
       const stream = await drive.entries();
 
       for await (const entry of stream) {
+        console.log("entry", entry);
         const { key, value } = entry;
         if (FileUtils.isImageFile(key)) {
           entries.push({ key, value });

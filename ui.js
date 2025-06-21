@@ -288,20 +288,20 @@ class UI {
 
       const buff = await blobs.get(value.blob);
 
-      // Convert buffer to blob URL for display
-      const blob = new Blob([buff], {
+      // Convert buffer to blob URL for thumbnail display
+      const thumbnailBlob = new Blob([buff], {
         type: key.endsWith(".gif") ? "image/gif" : "image/webp",
       });
-      const url = URL.createObjectURL(blob);
+      const thumbnailUrl = URL.createObjectURL(thumbnailBlob);
 
       gifItem.innerHTML = `
-        <img src="${url}" alt="${key}" />
+        <img src="${thumbnailUrl}" alt="${key}" />
         <div class="filename">${key}</div>
       `;
 
-      // Add click handler to view full size
+      // Add click handler to view full size - pass the buffer data instead of URL
       gifItem.addEventListener("click", () => {
-        this.showFullSizeImage(url, key);
+        this.showFullSizeImage(buff, key);
       });
 
       this.elements.galleryGrid.appendChild(gifItem);
@@ -309,7 +309,13 @@ class UI {
   }
 
   // Show full size image in modal
-  showFullSizeImage(url, filename) {
+  showFullSizeImage(buffer, filename) {
+    // Create a new blob URL for the full-size view
+    const blob = new Blob([buffer], {
+      type: filename.endsWith(".gif") ? "image/gif" : "image/webp",
+    });
+    const url = URL.createObjectURL(blob);
+
     const modal = document.createElement("div");
     modal.style.cssText = `
       position: fixed;
