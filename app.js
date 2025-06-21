@@ -9,17 +9,28 @@ import z32 from "z32";
 import b4a from "b4a";
 import UI from "./ui.js";
 import { FileUtils } from "./utils.js";
+import { getOptions } from "./options.js";
 
-const key = Pear.config.args[0];
+const options = getOptions();
+const key = options.key; // --key option
+const dir = options.dir; // --dir option
 
 console.log("key", key);
+console.log("dir", dir);
 
 // Initialize Hyperdrive infrastructure
 class GifApp {
-  constructor() {
-    this.store = new Corestore(Pear.config.storage);
+  constructor(dir = Pear.config.storage) {
+    this.store = new Corestore(dir);
+    console.log("store", this.store);
+
     this.swarm = new Hyperswarm();
-    // this.pairing = new BlindPairing(this.swarm);
+    this.pairing = new BlindPairing(this.swarm);
+
+    this.member = null;
+    this.invite = null;
+    this.invitePublicKey = null;
+
     this.drive = null;
     this.ui = null;
     this.autobase = null;
@@ -35,51 +46,200 @@ class GifApp {
       this.store.replicate(conn);
     });
 
-    this.autobase = new Autobase(this.store, key ? key : null, new GifView());
+    // Skip autobase creation if we have an invite
+    if (key) {
+      console.log("initializing with invite");
+      await this.joinWithInvite(key);
+
+      console.log("completed join with invite");
+      // Initialize UI after drive is ready
+      this.ui = new UI(this.driveKey);
+      this.setupEventListeners();
+      return;
+    }
+
+    this.autobase = new Autobase(this.store, null, new GifView());
 
     // wait for the autobase instance to be initialized
     await this.autobase.ready();
-
-    if (!key) {
-      console.log("key:", this.autobase.key);
-      this.driveKey = b4a.toString(this.autobase.key, "hex");
-    }
 
     console.log(
       `Created autobase: ${this.autobase.key.toString("hex").substr(0, 16)}...`
     );
 
     // Get local writer core (feed)
+    const localCore = this.store.get({ name: "local" });
+    await localCore.ready();
+    const localKey = localCore.key;
 
-    // // Add ourselves as first writer
-    // await this.autobase.append({
-    //   type: "addWriter",
-    //   key: localKey.toString("hex"),
-    //   addedBy: "bootstrapper",
-    //   timestamp: Date.now(),
-    // });
+    // if we're not already setup, add ourselves as first writer
+    if (!this.store.storage.bootstrap) {
+      // Add ourselves as first writer
+      await this.autobase.append({
+        type: "addWriter",
+        key: localKey.toString("hex"),
+        addedBy: "bootstrapper",
+        timestamp: Date.now(),
+      });
+    }
 
-    // // Setup blind-pairing to accept joiners (writers)
-    // this.member = this.pairing.addMember({
-    //   discoveryKey: this.autobase.discoveryKey,
-    //   onadd: (candidate) => this.onAddMember(candidate), // Called when a writer joins
-    // });
-    // await this.member.flushed(); // Wait until ready
+    // Setup blind-pairing to accept joiners (writers)
+    this.member = this.pairing.addMember({
+      discoveryKey: this.autobase.discoveryKey,
+      onadd: (candidate) => this.onAddMember(candidate), // Called when a writer joins
+    });
+    await this.member.flushed(); // Wait until ready
 
-    // // Create invite for writers to join
-    // const { invite, publicKey } = BlindPairing.createInvite(this.autobase.key);
-    // this.invitePublicKey = publicKey;
-    // this.invite = z32.encode(invite); // Encode invite for sharing
-    // console.log(`Invite created: ${this.invite}`);
+    // TODO: Do we want every peer to create a new invite?
+    // Create invite for writers to join
+    const { invite, publicKey } = BlindPairing.createInvite(this.autobase.key);
+    this.invitePublicKey = publicKey;
+    this.invite = z32.encode(invite); // Encode invite for sharing
+    console.log(`Invite created: ${this.invite}`);
+
+    console.log("key:", this.invite);
+    this.driveKey = this.invite;
 
     const discovery = this.swarm.join(this.autobase.discoveryKey);
     await discovery.flushed();
 
-    // console.log("drive key:", b4a.toString(this.drive.key, "hex"));
-
     // Initialize UI after drive is ready
     this.ui = new UI(this.driveKey);
     this.setupEventListeners();
+  }
+
+  async joinWithInvite(invite) {
+    console.log(`Joining with invite: ${invite}`);
+
+    // Get the local writer core (feed)
+    const localCore = this.store.get({ name: "local" });
+    console.log("debug: about to ready local core");
+    await localCore.ready();
+    console.log("debug: local core ready");
+    const localKey = localCore.key; // Get the public key
+
+    console.log("debug: about to add candidate");
+    // Add this writer as a candidate to the pairing process
+    const candidate = this.pairing.addCandidate({
+      invite: z32.decode(invite), // Decode the invite
+      userData: localKey, // Attach our public key
+      onadd: (result) => this.onJoinSuccess(result), // Callback when join succeeds
+    });
+
+    console.log("debug: candidate added", candidate);
+
+    // Return a promise that resolves when joining is complete
+    return new Promise((resolve) => {
+      console.log("debug: about to resolve join");
+      this.resolveJoin = resolve;
+    });
+  }
+
+  // Called when a writer tries to join
+  async onAddMember(candidate) {
+    console.log(
+      `Received join request from candidate: ${candidate.inviteId
+        .toString("hex")
+        .substr(0, 16)}...`
+    );
+
+    try {
+      // 1. Open the candidate FIRST (this is critical!)
+      await candidate.open(this.invitePublicKey);
+      console.log("debug: invite opened successfully");
+
+      const writerKey = candidate.userData; // Get the writer's public key
+      if (!writerKey) {
+        console.log("No userData received from candidate");
+        return;
+      }
+
+      console.log(
+        `Adding new writer: ${writerKey.toString("hex").substr(0, 16)}...`
+      );
+
+      // 2. Add the new peer as a writer in the autobase
+      await this.autobase.append({
+        type: "addWriter",
+        key: writerKey.toString("hex"),
+        addedBy: "bootstrapper",
+        timestamp: Date.now(),
+      });
+
+      // 3. Update autobase after adding writer
+      await this.autobase.update();
+
+      // 4. Send autobase key and encryption key to the new writer
+      await candidate.confirm({
+        key: this.autobase.key,
+        encryptionKey: this.autobase.encryptionKey,
+      });
+
+      console.log("✅ New writer added successfully");
+    } catch (error) {
+      console.error("Error in onAddMember:", error);
+    }
+  }
+
+  // Called when joining the network is successful
+  async onJoinSuccess(result) {
+    console.log("Join successful, creating autobase...");
+    console.log("result:", result);
+
+    // Create an Autobase instance for collaborative log
+    this.autobase = new Autobase(this.store, result.key, new GifView());
+    await this.autobase.ready(); // Wait until ready
+
+    console.log(
+      `Joined autobase: ${this.autobase.key.toString("hex").substr(0, 16)}...`
+    );
+    console.log("Initial autobase.writable:", this.autobase.writable);
+
+    // Join the peer-to-peer swarm for this autobase
+    const discovery = this.swarm.join(this.autobase.discoveryKey);
+    await discovery.flushed(); // Wait until discovery is complete
+
+    // Wait until this writer becomes writable
+    this.waitForWritable();
+  }
+
+  // Wait until this writer is allowed to write to the autobase
+  waitForWritable() {
+    console.log("debug: checking if writable");
+    console.log("autobase.writable:", this.autobase.writable);
+
+    // If already writable, resolve immediately
+    if (this.autobase.writable) {
+      console.log("✅ Already writable!");
+      if (this.resolveJoin) {
+        this.resolveJoin();
+      }
+      return;
+    }
+
+    // Otherwise, wait for an "update" event
+    const check = () => {
+      console.log("debug: update event received, checking writable");
+      if (this.autobase.writable) {
+        console.log("✅ Now writable!");
+        this.autobase.off("update", check);
+        if (this.resolveJoin) {
+          this.resolveJoin();
+        }
+      }
+    };
+
+    console.log("debug: listening for updates");
+    this.autobase.on("update", check);
+
+    // Add a timeout for debugging
+    setTimeout(() => {
+      if (!this.autobase.writable) {
+        console.log("⚠️ Still not writable after 10s");
+        console.log("autobase.writable:", this.autobase.writable);
+        console.log("autobase.writers:", this.autobase.writers);
+      }
+    }, 10000);
   }
 
   setupEventListeners() {
@@ -152,11 +312,18 @@ class GifView {
 
   async apply(nodes, view, host) {
     console.log("applying nodes", nodes, view);
+    let gifsChanged = false;
 
     for (const node of nodes) {
       const { value } = node;
 
-      if (value && value.blob) {
+      if (value.type === "addWriter") {
+        // Add a new writer to the host
+        await host.addWriter(Buffer.from(value.key, "hex"));
+        continue;
+      }
+
+      if (value.blob) {
         console.log("applying node", node);
 
         console.log("value", value);
@@ -166,12 +333,15 @@ class GifView {
         console.log("done applying node", node);
 
         // Refresh the gallery if open
+        gifsChanged = true;
       }
     }
 
-    setTimeout(() => {
-      document.dispatchEvent(new CustomEvent("refreshGallery"));
-    }, 1000);
+    if (gifsChanged) {
+      setTimeout(() => {
+        document.dispatchEvent(new CustomEvent("refreshGallery"));
+      }, 1000);
+    }
   }
 
   open(store, base) {
@@ -190,6 +360,10 @@ class GifView {
     // Name for blobs doesnt need to be derived from the hyperbee key since
     // there is a unique namespace for the viewstore
     const blobs = new Hyperblobs(store.get("blobs"));
+
+    console.log("base.store", base.store);
+    console.log("store", store);
+
     const drive = new Hyperdrive(base.store, { _db: db });
     drive.blobs = blobs;
     return drive;
