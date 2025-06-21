@@ -20,33 +20,23 @@ class UI {
       uploadContainer: document.querySelector("#upload-container"),
       tabs: document.querySelectorAll(".tab"),
       loader: document.querySelector("#loader"),
-      keyValue: document.querySelector("#key-value"),
-      keyDisplay: document.querySelector("#key-display"),
+      inviteButton: document.querySelector("#invite-button"),
+      inviteModal: document.querySelector("#invite-modal"),
+      inviteLink: document.querySelector("#invite-link"),
+      copyInviteButton: document.querySelector("#copy-invite"),
+      closeModalButton: document.querySelector("#close-modal"),
+      inviteStatus: document.querySelector("#invite-status"),
     };
 
     this.currentTab = "upload";
 
     this.initializeEventListeners();
     this.hideLoader();
-    this.updateKeyDisplay();
   }
 
   hideLoader() {
     if (this.elements.loader) {
       this.elements.loader.classList.add("hidden");
-    }
-  }
-
-  updateKeyDisplay() {
-    if (!this.driveKey) {
-      return;
-    }
-
-    if (this.elements.keyValue) {
-      this.elements.keyValue.textContent = this.driveKey;
-    }
-    if (this.elements.keyDisplay) {
-      this.elements.keyDisplay.classList.remove("hidden");
     }
   }
 
@@ -93,6 +83,32 @@ class UI {
       if (this.currentTab === "gallery") {
         this.loadGallery();
       }
+    });
+
+    // Modal close button handler
+    this.elements.closeModalButton.addEventListener("click", () => {
+      this.closeInviteModal();
+    });
+
+    // Copy invite button handler
+    this.elements.copyInviteButton.addEventListener("click", () => {
+      this.copyInviteToClipboard();
+    });
+
+    // Close modal when clicking outside
+    this.elements.inviteModal.addEventListener("click", (e) => {
+      if (e.target === this.elements.inviteModal) {
+        this.closeInviteModal();
+      }
+    });
+
+    // Listen for invite generation events
+    document.addEventListener("inviteGenerated", (e) => {
+      this.showInviteInModal(e.detail.invite);
+    });
+
+    document.addEventListener("inviteError", (e) => {
+      this.showInviteError(e.detail.error);
     });
 
     // Global remove preview function
@@ -215,6 +231,12 @@ class UI {
   handleTabSwitch(e) {
     const tab = e.currentTarget;
     const targetTab = tab.dataset.tab;
+
+    // Don't handle invite button as a regular tab
+    if (tab.id === "invite-button") {
+      this.requestInvite();
+      return;
+    }
 
     // Update tab states
     this.elements.tabs.forEach((t) => t.classList.remove("active"));
@@ -363,6 +385,62 @@ class UI {
     console.error("Upload error:", error);
     this.setStatus("Upload failed: " + error.message, "error");
     this.elements.uploadButton.disabled = false;
+  }
+
+  // Invite management methods
+  requestInvite() {
+    // Show loading state
+    this.elements.inviteStatus.textContent = "Generating invite...";
+    this.elements.inviteStatus.className = "invite-status";
+
+    // Emit custom event to request invite generation
+    const inviteEvent = new CustomEvent("requestInvite");
+    document.dispatchEvent(inviteEvent);
+  }
+
+  showInviteInModal(invite) {
+    // Update the invite link input
+    this.elements.inviteLink.value = invite;
+
+    // Clear status
+    this.elements.inviteStatus.textContent = "";
+    this.elements.inviteStatus.className = "invite-status";
+
+    // Show the modal
+    this.elements.inviteModal.classList.remove("hidden");
+
+    // Focus the input for easy selection
+    this.elements.inviteLink.focus();
+    this.elements.inviteLink.select();
+  }
+
+  showInviteError(error) {
+    this.elements.inviteStatus.textContent = `Error: ${error}`;
+    this.elements.inviteStatus.className = "invite-status error";
+  }
+
+  closeInviteModal() {
+    this.elements.inviteModal.classList.add("hidden");
+    this.elements.inviteStatus.textContent = "";
+    this.elements.inviteStatus.className = "invite-status";
+  }
+
+  async copyInviteToClipboard() {
+    try {
+      await navigator.clipboard.writeText(this.elements.inviteLink.value);
+      this.elements.inviteStatus.textContent = "Copied to clipboard!";
+      this.elements.inviteStatus.className = "invite-status success";
+
+      // Clear success message after 2 seconds
+      setTimeout(() => {
+        this.elements.inviteStatus.textContent = "";
+        this.elements.inviteStatus.className = "invite-status";
+      }, 2000);
+    } catch (error) {
+      console.error("Failed to copy to clipboard:", error);
+      this.elements.inviteStatus.textContent = "Failed to copy to clipboard";
+      this.elements.inviteStatus.className = "invite-status error";
+    }
   }
 }
 

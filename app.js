@@ -90,15 +90,8 @@ class GifApp {
     });
     await this.member.flushed(); // Wait until ready
 
-    // TODO: Do we want every peer to create a new invite?
-    // Create invite for writers to join
-    const { invite, publicKey } = BlindPairing.createInvite(this.autobase.key);
-    this.invitePublicKey = publicKey;
-    this.invite = z32.encode(invite); // Encode invite for sharing
-    console.log(`Invite created: ${this.invite}`);
-
-    console.log("key:", this.invite);
-    this.driveKey = this.invite;
+    // Generate initial invite
+    await this.generateInvite();
 
     const discovery = this.swarm.join(this.autobase.discoveryKey);
     await discovery.flushed();
@@ -253,6 +246,27 @@ class GifApp {
     document.addEventListener("requestGallery", async () => {
       await this.loadGallery();
     });
+
+    // Listen for invite generation requests from UI
+    document.addEventListener("requestInvite", async (e) => {
+      try {
+        const invite = await this.generateInvite();
+        // Notify UI of successful invite generation
+        document.dispatchEvent(
+          new CustomEvent("inviteGenerated", {
+            detail: { invite },
+          })
+        );
+      } catch (error) {
+        console.error("Error generating invite:", error);
+        // Notify UI of error
+        document.dispatchEvent(
+          new CustomEvent("inviteError", {
+            detail: { error: error.message },
+          })
+        );
+      }
+    });
   }
 
   // File upload handler
@@ -304,6 +318,24 @@ class GifApp {
       console.error("Error loading gallery:", error);
       this.ui.updateGallery([]);
     }
+  }
+
+  // Generate a new invite for sharing
+  async generateInvite() {
+    if (!this.autobase) {
+      throw new Error("Autobase not initialized");
+    }
+
+    // Create invite for writers to join
+    const { invite, publicKey } = BlindPairing.createInvite(this.autobase.key);
+    this.invitePublicKey = publicKey;
+    this.invite = z32.encode(invite); // Encode invite for sharing
+    this.driveKey = this.invite;
+
+    console.log(`Invite created: ${this.invite}`);
+    console.log("key:", this.invite);
+
+    return this.invite;
   }
 }
 
