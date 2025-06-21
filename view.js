@@ -1,6 +1,7 @@
 import Hyperdrive from "hyperdrive";
 import Hyperbee from "hyperbee";
 import Hyperblobs from "hyperblobs";
+import Corestore from "corestore";
 
 export class GifView {
   valueEncoding = "json";

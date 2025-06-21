@@ -2,6 +2,7 @@ import Hyperswarm from "hyperswarm";
 import BlindPairing from "blind-pairing";
 import Autobase from "autobase";
 import Corestore from "corestore";
+import ReadyResource from "ready-resource";
 import z32 from "z32";
 import b4a from "b4a";
 import UI from "./ui.js";
@@ -9,8 +10,9 @@ import { FileUtils } from "./utils.js";
 import { GifView } from "./view.js";
 
 // Initialize Hyperdrive infrastructure
-export class GifApp {
+export class GifApp extends ReadyResource {
   constructor(invite = null, dir = Pear.config.storage) {
+    super();
     this.store = new Corestore(dir);
     console.log("store", this.store);
 
@@ -29,10 +31,10 @@ export class GifApp {
     this.initialInvite = invite;
 
     Pear.teardown(() => this.swarm.destroy());
-    this.initialize();
+    this.ready().catch(console.log);
   }
 
-  async initialize() {
+  async _open() {
     // Replication of the corestore instance on connection with other peers
     this.swarm.on("connection", (conn) => {
       console.log("connection established with a peer");
@@ -333,6 +335,11 @@ export class GifApp {
       this.ui = new UI(this.driveKey);
       this.setupEventListeners();
       document.dispatchEvent(new CustomEvent("appReady"));
+
+      // If this was a join operation, dispatch joinSuccess event
+      if (this.initialInvite) {
+        document.dispatchEvent(new CustomEvent("joinSuccess"));
+      }
       return;
     }
 
@@ -350,6 +357,11 @@ export class GifApp {
         this.ui = new UI(this.driveKey);
         this.setupEventListeners();
         document.dispatchEvent(new CustomEvent("appReady"));
+
+        // If this was a join operation, dispatch joinSuccess event
+        if (this.initialInvite) {
+          document.dispatchEvent(new CustomEvent("joinSuccess"));
+        }
       }
     };
 
@@ -475,5 +487,21 @@ export class GifApp {
     console.log("key:", this.invite);
 
     return this.invite;
+  }
+
+  async _close() {
+    if (this.member) {
+      await this.member.close();
+    }
+    if (this.swarm) {
+      await this.pairing.close();
+      await this.swarm.destroy();
+    }
+    if (this.autobase) {
+      await this.autobase.close();
+    }
+    if (this.store) {
+      await this.store.close();
+    }
   }
 }
