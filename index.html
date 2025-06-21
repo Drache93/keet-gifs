@@ -55,6 +55,178 @@
         display: none !important;
       }
 
+      /* Startup UI Styles */
+      #startup-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        width: 100%;
+        padding: 2rem;
+        box-sizing: border-box;
+      }
+
+      .startup-content {
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .startup-header h1 {
+        color: #b0d944;
+        font-size: 3rem;
+        margin: 0 0 1rem 0;
+        text-shadow: 0 0 10px rgba(176, 217, 68, 0.5);
+      }
+
+      .startup-header p {
+        color: #888;
+        font-size: 1.1rem;
+        margin: 0 0 3rem 0;
+        line-height: 1.4;
+      }
+
+      .startup-options {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .startup-button {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.5rem;
+        border: 2px solid #b0d944;
+        background: rgba(0, 0, 0, 0.3);
+        color: #b0d944;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        text-align: left;
+      }
+
+      .startup-button:hover {
+        background: rgba(176, 217, 68, 0.1);
+        border-color: #d4f444;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(176, 217, 68, 0.2);
+      }
+
+      .startup-button.primary {
+        background: rgba(176, 217, 68, 0.1);
+        border-color: #b0d944;
+      }
+
+      .startup-button.secondary {
+        background: rgba(0, 0, 0, 0.3);
+        border-color: #666;
+      }
+
+      .startup-button.secondary:hover {
+        border-color: #b0d944;
+      }
+
+      .button-icon {
+        font-size: 2rem;
+        flex-shrink: 0;
+      }
+
+      .button-text {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .button-text strong {
+        font-size: 1.2rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .button-text small {
+        color: #888;
+        font-size: 0.9rem;
+      }
+
+      .invite-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        width: 100%;
+      }
+
+      .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .input-group label {
+        color: #b0d944;
+        font-size: 1rem;
+        font-weight: bold;
+        text-align: left;
+      }
+
+      .input-group input {
+        padding: 1rem;
+        font-size: 1rem;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 2px solid #666;
+        transition: border-color 0.3s ease;
+      }
+
+      .input-group input:focus {
+        border-color: #b0d944;
+        outline: none;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+      }
+
+      .button-group .startup-button {
+        flex: 1;
+        justify-content: center;
+        padding: 1rem;
+      }
+
+      .status-message {
+        margin-top: 1rem;
+        padding: 0.75rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        min-height: 1.2rem;
+      }
+
+      .status-message.info {
+        background: rgba(176, 217, 68, 0.1);
+        color: #b0d944;
+        border: 1px solid #b0d944;
+      }
+
+      .status-message.error {
+        background: rgba(255, 107, 107, 0.1);
+        color: #ff6b6b;
+        border: 1px solid #ff6b6b;
+      }
+
+      /* Main app container - hidden initially */
+      #main-app {
+        display: none;
+        flex-direction: column;
+        height: 100vh;
+        width: 100%;
+      }
+
+      #main-app.active {
+        display: flex;
+      }
+
       /* Loader styles */
       #loader {
         position: fixed;
@@ -527,64 +699,72 @@
       <pear-ctrl></pear-ctrl>
     </div>
 
-    <!-- Invite Modal -->
-    <div id="invite-modal" class="modal hidden">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Invite Link</h3>
-          <button id="close-modal" class="close-button">✕</button>
-        </div>
-        <div class="modal-body">
-          <p>
-            Share this invite link with others to let them join your GIF
-            collection:
-          </p>
-          <div class="invite-container">
-            <input type="text" id="invite-link" readonly />
-            <button id="copy-invite" class="copy-button">Copy</button>
-          </div>
-          <div id="invite-status" class="invite-status"></div>
-        </div>
-      </div>
+    <!-- Startup UI -->
+    <div id="startup-container">
+      <!-- Content will be dynamically inserted by StartupUI -->
     </div>
 
-    <main>
-      <div id="upload-container">
-        <form id="upload-form">
-          <div id="file-input-container">
-            <input type="file" id="file-input" accept=".gif,.webp" />
-            <div id="upload-info">
-              <div id="upload-icon">📁</div>
-              <div id="upload-text">Click to select or drag & drop</div>
-              <div id="file-info">Supports GIF and WebP files</div>
-            </div>
-            <div id="preview" class="hidden"></div>
+    <!-- Main App (hidden initially) -->
+    <div id="main-app">
+      <!-- Invite Modal -->
+      <div id="invite-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Invite Link</h3>
+            <button id="close-modal" class="close-button">✕</button>
           </div>
-
-          <button type="submit" id="upload-button" disabled>
-            Upload GIF/WebP
-          </button>
-
-          <div id="status"></div>
-        </form>
-      </div>
-
-      <div id="gallery">
-        <div id="gallery-header">
-          <h3>Uploaded GIFs & WebPs</h3>
-          <button id="refresh-button">Refresh</button>
-        </div>
-        <div id="gallery-grid"></div>
-        <div id="gallery-empty">
-          No GIFs uploaded yet. Upload your first one!
+          <div class="modal-body">
+            <p>
+              Share this invite link with others to let them join your GIF
+              collection:
+            </p>
+            <div class="invite-container">
+              <input type="text" id="invite-link" readonly />
+              <button id="copy-invite" class="copy-button">Copy</button>
+            </div>
+            <div id="invite-status" class="invite-status"></div>
+          </div>
         </div>
       </div>
 
-      <div id="tabs">
-        <div class="tab active" data-tab="upload">Upload</div>
-        <div class="tab" data-tab="gallery">Gallery</div>
-        <div class="tab" id="invite-button">Invite</div>
-      </div>
-    </main>
+      <main>
+        <div id="upload-container">
+          <form id="upload-form">
+            <div id="file-input-container">
+              <input type="file" id="file-input" accept=".gif,.webp" />
+              <div id="upload-info">
+                <div id="upload-icon">📁</div>
+                <div id="upload-text">Click to select or drag & drop</div>
+                <div id="file-info">Supports GIF and WebP files</div>
+              </div>
+              <div id="preview" class="hidden"></div>
+            </div>
+
+            <button type="submit" id="upload-button" disabled>
+              Upload GIF/WebP
+            </button>
+
+            <div id="status"></div>
+          </form>
+        </div>
+
+        <div id="gallery">
+          <div id="gallery-header">
+            <h3>Uploaded GIFs & WebPs</h3>
+            <button id="refresh-button">Refresh</button>
+          </div>
+          <div id="gallery-grid"></div>
+          <div id="gallery-empty">
+            No GIFs uploaded yet. Upload your first one!
+          </div>
+        </div>
+
+        <div id="tabs">
+          <div class="tab active" data-tab="upload">Upload</div>
+          <div class="tab" data-tab="gallery">Gallery</div>
+          <div class="tab" id="invite-button">Invite</div>
+        </div>
+      </main>
+    </div>
   </body>
 </html>
