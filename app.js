@@ -21,7 +21,7 @@ document.addEventListener("startNewApp", async () => {
 
   // Hide startup UI and show loader
   startupUI.hide();
-  showLoader("Initializing new collaborative space...");
+  showLoader("Getting Gifs...");
 
   // Initialize the application without an invite
   app = new GifApp();

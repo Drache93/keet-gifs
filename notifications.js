@@ -267,7 +267,7 @@ class NotificationSystem {
   // Show writer joined notification
   showWriterJoined(writerId) {
     return this.showNotification({
-      title: "New collaborator joined!",
+      title: "New writer joined!",
       message: `Writer ${writerId}...`,
       icon: "👋",
       type: "success",
