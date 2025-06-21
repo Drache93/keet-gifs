@@ -1,5 +1,6 @@
 import { GifApp } from "./gif_app.js";
 import { StartupUI } from "./startup-ui.js";
+import { NotificationSystem } from "./notifications.js";
 import { getOptions } from "./options.js";
 
 const options = getOptions();
@@ -9,8 +10,9 @@ const dir = options.dir; // --dir option
 console.log("key", key);
 console.log("dir", dir);
 
-// Initialize startup UI
+// Initialize startup UI and notification system
 const startupUI = new StartupUI();
+const notifications = new NotificationSystem();
 let app;
 
 // Handle startup events
@@ -33,8 +35,27 @@ document.addEventListener("joinWithInvite", async (e) => {
   startupUI.hide();
   showLoader("Joining collaborative space...");
 
-  // Initialize the application with the invite
-  app = new GifApp(invite);
+  // Set up timeout for join process
+  const joinTimeout = setTimeout(() => {
+    console.log("Join timeout reached");
+    notifications.showJoinTimeout();
+  }, 30000); // 30 seconds
+
+  try {
+    // Initialize the application with the invite
+    app = new GifApp(invite);
+
+    // Listen for join success to clear timeout
+    const successHandler = () => {
+      clearTimeout(joinTimeout);
+      document.removeEventListener("joinSuccess", successHandler);
+    };
+    document.addEventListener("joinSuccess", successHandler);
+  } catch (error) {
+    clearTimeout(joinTimeout);
+    console.error("Error during join:", error);
+    notifications.showJoinError(error.message);
+  }
 });
 
 // If a key was provided via command line, skip startup UI
@@ -73,13 +94,13 @@ document.addEventListener("appReady", () => {
 document.addEventListener("joinSuccess", () => {
   console.log("Join successful, showing restart message...");
 
-  // Hide main app and show restart message
+  // Hide main app and show restart page
   document.getElementById("main-app").classList.remove("active");
-  showRestartMessage();
+  showRestartPage();
 });
 
-// Show restart message after successful join
-function showRestartMessage() {
+// Show restart page after successful join
+function showRestartPage() {
   const container = document.createElement("div");
   container.style.cssText = `
     position: fixed;
@@ -138,3 +159,15 @@ function showRestartMessage() {
   container.appendChild(content);
   document.body.appendChild(container);
 }
+
+// Handle retry join event
+document.addEventListener("retryJoin", () => {
+  startupUI.show();
+  startupUI.showInviteForm();
+});
+
+// Handle back to start event
+document.addEventListener("backToStart", () => {
+  startupUI.show();
+  startupUI.showMainOptions();
+});
