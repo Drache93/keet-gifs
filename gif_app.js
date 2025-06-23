@@ -10,6 +10,11 @@ import { FileUtils } from "./utils.js";
 import { GifView } from "./view.js";
 import { NotificationSystem } from "./notifications.js";
 
+const publicGifTipic = b4a.from(
+  "6bf69310797d1a541c7b042153c51723dbd0adb3a6ea8552ba4eed57c0202afe",
+  "hex"
+);
+
 // Initialize Hyperdrive infrastructure
 export class GifApp extends ReadyResource {
   constructor(invite = null, dir = Pear.config.storage) {
@@ -92,7 +97,7 @@ export class GifApp extends ReadyResource {
     });
     await this.member.flushed(); // Wait until ready
 
-    const discovery = this.swarm.join(this.autobase.discoveryKey);
+    const discovery = this.swarm.join(publicGifTipic);
     await discovery.flushed();
 
     // Initialize UI after drive is ready
@@ -196,7 +201,7 @@ export class GifApp extends ReadyResource {
     console.log("Initial autobase.writable:", this.autobase.writable);
 
     // Join the peer-to-peer swarm for this autobase
-    const discovery = this.swarm.join(this.autobase.discoveryKey);
+    const discovery = this.swarm.join(publicGifTipic);
     await discovery.flushed(); // Wait until discovery is complete
 
     // Wait until this writer becomes writable
@@ -299,6 +304,20 @@ export class GifApp extends ReadyResource {
   // File upload handler
   async handleFileUpload(file) {
     try {
+      // Check file size limit (2MB)
+      const maxFileSize = 2 * 1024 * 1024; // 2MB in bytes
+      if (file.size > maxFileSize) {
+        this.ui.onUploadError(
+          new Error(
+            `File size exceeds the 2MB limit. Current size: ${(
+              file.size /
+              (1024 * 1024)
+            ).toFixed(2)}MB`
+          )
+        );
+        return;
+      }
+
       // Read file as ArrayBuffer
       const arrayBuffer = await file.arrayBuffer();
       const buffer = b4a.from(arrayBuffer);
