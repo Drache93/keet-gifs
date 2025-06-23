@@ -5,6 +5,7 @@
       pear-ctrl[data-platform="darwin"] {
         margin-top: 12px;
         margin-left: 10px;
+        height: 12px;
       }
 
       #titlebar {
@@ -520,6 +521,17 @@
         object-fit: cover;
         border-radius: 2px;
         margin-bottom: 0.5rem;
+        cursor: grab;
+        transition: transform 0.2s ease;
+      }
+
+      .gif-item img:active {
+        cursor: grabbing;
+        transform: scale(0.98);
+      }
+
+      .gif-item img:hover {
+        transform: scale(1.02);
       }
 
       .gif-item .filename {

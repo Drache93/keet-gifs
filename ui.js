@@ -295,13 +295,34 @@ class UI {
       const thumbnailUrl = URL.createObjectURL(thumbnailBlob);
 
       gifItem.innerHTML = `
-        <img src="${thumbnailUrl}" alt="${key}" />
+        <img src="${thumbnailUrl}" alt="${key}" draggable="true" />
         <div class="filename">${key}</div>
       `;
 
       // Add click handler to view full size - pass the buffer data instead of URL
       gifItem.addEventListener("click", () => {
         this.showFullSizeImage(buff, key);
+      });
+
+      // Add drag functionality for the image
+      const img = gifItem.querySelector("img");
+      img.addEventListener("dragstart", (e) => {
+        // Create a new blob with proper metadata for dragging
+        const dragBlob = new Blob([buff], {
+          type: key.endsWith(".gif") ? "image/gif" : "image/webp",
+        });
+
+        // Set the drag data with the blob and filename
+        e.dataTransfer.setData("text/plain", key);
+        e.dataTransfer.setData("application/octet-stream", dragBlob);
+        e.dataTransfer.setData("image/gif", dragBlob);
+        e.dataTransfer.setData("image/webp", dragBlob);
+
+        // Set the drag image (optional - shows a preview while dragging)
+        e.dataTransfer.setDragImage(img, img.width / 2, img.height / 2);
+
+        // Set effect allowed
+        e.dataTransfer.effectAllowed = "copy";
       });
 
       this.elements.galleryGrid.appendChild(gifItem);
