@@ -307,22 +307,33 @@ class UI {
       // Add drag functionality for the image
       const img = gifItem.querySelector("img");
       img.addEventListener("dragstart", (e) => {
-        // Create a new blob with proper metadata for dragging
-        const dragBlob = new Blob([buff], {
+        // Create a blob URL for the file data
+        const blob = new Blob([buff], {
           type: key.endsWith(".gif") ? "image/gif" : "image/webp",
         });
+        const blobUrl = URL.createObjectURL(blob);
 
-        // Set the drag data with the blob and filename
+        // Set data formats that work well with Electron
         e.dataTransfer.setData("text/plain", key);
-        e.dataTransfer.setData("application/octet-stream", dragBlob);
-        e.dataTransfer.setData("image/gif", dragBlob);
-        e.dataTransfer.setData("image/webp", dragBlob);
+        e.dataTransfer.setData("text/uri-list", blobUrl);
+        e.dataTransfer.setData(
+          "text/html",
+          `<img src="${blobUrl}" alt="${key}">`
+        );
+        e.dataTransfer.setData("application/octet-stream", blob);
 
-        // Set the drag image (optional - shows a preview while dragging)
+        // Set the drag image
         e.dataTransfer.setDragImage(img, img.width / 2, img.height / 2);
 
         // Set effect allowed
         e.dataTransfer.effectAllowed = "copy";
+
+        console.log("Drag started with file:", key, "blobUrl:", blobUrl);
+
+        // Clean up the blob URL after a delay
+        setTimeout(() => {
+          URL.revokeObjectURL(blobUrl);
+        }, 1000);
       });
 
       this.elements.galleryGrid.appendChild(gifItem);

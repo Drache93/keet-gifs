@@ -1,5 +1,7 @@
 # 🎬 Keet GIFs
 
+[![🍐 pear](https://img.shields.io/badge/🍐%20pear-pear://eedfdkadkz96r9kh1pc9fyjr6h986i76hy78s5yszg9a85ee7g3o-80cf62)](pear://eedfdkadkz96r9kh1pc9fyjr6h986i76hy78s5yszg9a85ee7g3o)
+
 **Decentralized GIF sharing with zero servers, zero censorship, zero limits.**
 
 Share your favorite GIFs and WebP images directly with friends using peer-to-peer technology. No accounts, no upload limits, no corporate overlords.
