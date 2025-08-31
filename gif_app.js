@@ -1,4 +1,6 @@
+import BlindPeering from "blind-peering";
 import Hyperswarm from "hyperswarm";
+import Wakeup from "protomux-wakeup";
 import BlindPairing from "blind-pairing";
 import Autobase from "autobase";
 import Corestore from "corestore";
@@ -10,9 +12,11 @@ import { FileUtils } from "./utils.js";
 import { GifView } from "./view.js";
 import { NotificationSystem } from "./notifications.js";
 
-const publicGifTipic = b4a.from(
-  "6bf69310797d1a541c7b042153c51723dbd0adb3a6ea8552ba4eed57c0202afe",
-  "hex"
+const blindPeers = ["3x4bak4wh5tar1w3ai5h7ixipq8gpagifggag83k1xetjmhqynxo"];
+
+const autobaseKey = b4a.from(
+  "8834da70c1259f2c646017595b115b40e510225dcd76da789ec59ab8879b6d92",
+  "hex",
 );
 
 // Initialize Hyperdrive infrastructure
@@ -33,6 +37,12 @@ export class GifApp extends ReadyResource {
     this.ui = null;
     this.autobase = null;
 
+    this.wakeup = new Wakeup();
+    this.blind = new BlindPeering(this.swarm, this.store, {
+      wakeup: this.wakeup,
+      mirrors: blindPeers,
+    });
+
     // Store the invite if provided
     this.initialInvite = invite;
 
@@ -48,6 +58,7 @@ export class GifApp extends ReadyResource {
     this.swarm.on("connection", (conn) => {
       console.log("connection established with a peer");
       this.store.replicate(conn);
+      this.wakeup.addStream(conn);
     });
 
     // Skip autobase creation if we have an invite
@@ -65,14 +76,14 @@ export class GifApp extends ReadyResource {
       return;
     }
 
-    this.autobase = new Autobase(this.store, null, new GifView());
+    this.autobase = new Autobase(this.store, autobaseKey, new GifView());
 
     // wait for the autobase instance to be initialized
     await this.autobase.ready();
 
-    console.log(
-      `Created autobase: ${this.autobase.key.toString("hex").substr(0, 16)}...`
-    );
+    this.blind.addAutobaseBackground(this.autobase);
+
+    console.log(`Created autobase: ${this.autobase.key.toString("hex")}...`);
 
     // Get local writer core (feed)
     const localCore = this.store.get({ name: "local" });
@@ -97,7 +108,7 @@ export class GifApp extends ReadyResource {
     });
     await this.member.flushed(); // Wait until ready
 
-    const discovery = this.swarm.join(publicGifTipic);
+    const discovery = this.swarm.join(this.autobase.discoveryKey);
     await discovery.flushed();
 
     // Initialize UI after drive is ready
@@ -140,7 +151,7 @@ export class GifApp extends ReadyResource {
     console.log(
       `Received join request from candidate: ${candidate.inviteId
         .toString("hex")
-        .substr(0, 16)}...`
+        .substr(0, 16)}...`,
     );
 
     try {
@@ -155,7 +166,7 @@ export class GifApp extends ReadyResource {
       }
 
       console.log(
-        `Adding new writer: ${writerKey.toString("hex").substr(0, 16)}...`
+        `Adding new writer: ${writerKey.toString("hex").substr(0, 16)}...`,
       );
 
       // 2. Add the new peer as a writer in the autobase
@@ -179,7 +190,7 @@ export class GifApp extends ReadyResource {
 
       // Show popup notification
       this.notifications.showWriterJoined(
-        writerKey.toString("hex").substr(0, 16)
+        writerKey.toString("hex").substr(0, 16),
       );
     } catch (error) {
       console.error("Error in onAddMember:", error);
@@ -195,13 +206,15 @@ export class GifApp extends ReadyResource {
     this.autobase = new Autobase(this.store, result.key, new GifView());
     await this.autobase.ready(); // Wait until ready
 
+    this.blind.addAutobaseBackground(this.autobase);
+
     console.log(
-      `Joined autobase: ${this.autobase.key.toString("hex").substr(0, 16)}...`
+      `Joined autobase: ${this.autobase.key.toString("hex").substr(0, 16)}...`,
     );
     console.log("Initial autobase.writable:", this.autobase.writable);
 
     // Join the peer-to-peer swarm for this autobase
-    const discovery = this.swarm.join(publicGifTipic);
+    const discovery = this.swarm.join(this.autobase.discoveryKey);
     await discovery.flushed(); // Wait until discovery is complete
 
     // Wait until this writer becomes writable
@@ -287,7 +300,7 @@ export class GifApp extends ReadyResource {
         document.dispatchEvent(
           new CustomEvent("inviteGenerated", {
             detail: { invite },
-          })
+          }),
         );
       } catch (error) {
         console.error("Error generating invite:", error);
@@ -295,7 +308,7 @@ export class GifApp extends ReadyResource {
         document.dispatchEvent(
           new CustomEvent("inviteError", {
             detail: { error: error.message },
-          })
+          }),
         );
       }
     });
@@ -312,8 +325,8 @@ export class GifApp extends ReadyResource {
             `File size exceeds the 2MB limit. Current size: ${(
               file.size /
               (1024 * 1024)
-            ).toFixed(2)}MB`
-          )
+            ).toFixed(2)}MB`,
+          ),
         );
         return;
       }

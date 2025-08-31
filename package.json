@@ -1,6 +1,5 @@
 {
   "name": "keet-gifs",
-  "main": "index.html",
   "pear": {
     "name": "keet-gifs",
     "type": "desktop",
@@ -8,6 +7,11 @@
       "backgroundColor": "#1F2430",
       "height": "720",
       "width": "1024"
+    },
+    "pre": "pear-electron/pre",
+    "routes": {
+      "/gif/.": "gif.js",
+      "/": "index.js"
     }
   },
   "type": "module",
@@ -24,6 +28,7 @@
     "autobase": "^7.13.1",
     "b4a": "^1.6.7",
     "blind-pairing": "^2.3.1",
+    "blind-peering": "^1.10.1",
     "corestore": "^7.4.5",
     "debounceify": "^1.1.0",
     "hyperbee": "^2.24.2",
@@ -31,7 +36,10 @@
     "hyperdrive": "^13.0.1",
     "hyperswarm": "^4.11.7",
     "localdrive": "^2.2.0",
+    "pear-bridge": "^1.2.0",
+    "pear-electron": "^1.7.17",
     "pear-stdio": "^1.0.1",
+    "protomux-wakeup": "^2.6.1",
     "ready-resource": "^1.1.2",
     "z32": "^1.1.0"
   }
