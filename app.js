@@ -1,48 +1,23 @@
 import { GifApp } from "./gif_app.js";
-import { StartupUI } from "./startup-ui.js";
 import { NotificationSystem } from "./notifications.js";
 import { getOptions } from "./options.js";
 
 const options = getOptions();
-const key = options.key; // --key option
+const invite = options.invite; // --key option
 const dir = options.dir; // --dir option
 
-console.log("key", key);
+console.log("invite", invite);
 console.log("dir", dir);
 
-// Initialize startup UI and notification system
-const startupUI = new StartupUI();
 const notifications = new NotificationSystem();
-let app;
+let app = null;
 
-// Handle startup events
-document.addEventListener("startNewApp", async () => {
-  console.log("Starting new app...");
+// Hide startup UI and show loader
+showLoader(invite ? "Joining as writer..." : "Getting Gifs...");
 
-  // Hide startup UI and show loader
-  startupUI.hide();
-  showLoader("Getting Gifs...");
-
-  // Initialize the application without an invite
-  app = new GifApp();
-});
-
-document.addEventListener("joinWithInvite", async (e) => {
-  const invite = e.detail.invite;
-  console.log("Joining with invite:", invite);
-
-  // Hide startup UI and show loader
-  startupUI.hide();
-  showLoader("Joining collaborative space...");
-
-  // Set up timeout for join process
-  const joinTimeout = setTimeout(() => {
-    console.log("Join timeout reached");
-    notifications.showJoinTimeout();
-  }, 30000); // 30 seconds
-
+if (invite) {
   try {
-    // Initialize the application with the invite
+    // Initialize the application
     app = new GifApp(invite);
 
     // Listen for join success to clear timeout
@@ -56,18 +31,8 @@ document.addEventListener("joinWithInvite", async (e) => {
     console.error("Error during join:", error);
     notifications.showJoinError(error.message);
   }
-});
-
-// If a key was provided via command line, skip startup UI
-if (key) {
-  console.log("Key provided via command line, skipping startup UI");
-
-  // Hide startup UI and show loader
-  startupUI.hide();
-  showLoader("Initializing with provided key...");
-
-  // Initialize the application with the provided key
-  app = new GifApp(key);
+} else {
+  app = new GifApp();
 }
 
 // Helper function to show loader with custom message
@@ -82,7 +47,7 @@ function showLoader(message = "Initializing...") {
 }
 
 // Listen for app ready event to hide loader and show main app
-document.addEventListener("appReady", () => {
+document.addEventListener("appReady", async () => {
   const loader = document.querySelector("#loader");
   if (loader) {
     loader.classList.add("hidden");
@@ -128,8 +93,8 @@ function showRestartPage() {
     <div style="font-size: 4rem; margin-bottom: 2rem;">🎉</div>
     <h1 style="font-size: 2rem; margin-bottom: 1rem;">Successfully Joined!</h1>
     <p style="font-size: 1.1rem; margin-bottom: 2rem; color: #888; line-height: 1.5;">
-      You have successfully joined the collaborative space. 
-      Please close this app and restart it to continue.
+      You have successfully joined the collaborative space.
+      Please close this app and restart it without the invite to continue.
     </p>
     <button id="continue-btn" style="
       background: #b0d944;
@@ -159,15 +124,3 @@ function showRestartPage() {
   container.appendChild(content);
   document.body.appendChild(container);
 }
-
-// Handle retry join event
-document.addEventListener("retryJoin", () => {
-  startupUI.show();
-  startupUI.showInviteForm();
-});
-
-// Handle back to start event
-document.addEventListener("backToStart", () => {
-  startupUI.show();
-  startupUI.showMainOptions();
-});

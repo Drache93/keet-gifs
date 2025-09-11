@@ -1,782 +1,783 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-  <head>
-    <style>
-      pear-ctrl[data-platform="darwin"] {
-        margin-top: 12px;
-        margin-left: 10px;
-        height: 12px;
-      }
-
-      #titlebar {
-        -webkit-app-region: drag;
-        height: 30px;
-        width: 100%;
-        position: fixed;
-        left: 0;
-        top: 0;
-        background-color: #b0d94413;
-        filter: drop-shadow(2px 10px 6px #888);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 10px;
-      }
-
-      button,
-      input {
-        all: unset;
-        border: 1px ridge #b0d944;
-        background: #000;
-        color: #b0d944;
-        padding: 0.45rem;
-        font-family: monospace;
-        font-size: 1rem;
-        line-height: 1rem;
-      }
-
-      body {
-        background-color: #001601;
-        font-family: monospace;
-        margin: 0;
-        padding: 0;
-      }
-
-      main {
-        display: flex;
-        height: 100vh;
-        color: white;
-        align-items: center;
-        flex-flow: column nowrap;
-        margin: 0;
-        padding: 0;
-      }
-
-      .hidden {
-        display: none !important;
-      }
-
-      /* Startup UI Styles */
-      #startup-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        width: 100%;
-        padding: 2rem;
-        box-sizing: border-box;
-      }
-
-      .startup-content {
-        max-width: 500px;
-        width: 100%;
-        text-align: center;
-      }
-
-      .startup-header h1 {
-        color: #b0d944;
-        font-size: 3rem;
-        margin: 0 0 1rem 0;
-        text-shadow: 0 0 10px rgba(176, 217, 68, 0.5);
-      }
-
-      .startup-header p {
-        color: #888;
-        font-size: 1.1rem;
-        margin: 0 0 3rem 0;
-        line-height: 1.4;
-      }
-
-      .startup-options {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      .startup-button {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1.5rem;
-        border: 2px solid #b0d944;
-        background: rgba(0, 0, 0, 0.3);
-        color: #b0d944;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        border-radius: 8px;
-        text-align: left;
-      }
-
-      .startup-button:hover {
-        background: rgba(176, 217, 68, 0.1);
-        border-color: #d4f444;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(176, 217, 68, 0.2);
-      }
-
-      .startup-button.primary {
-        background: rgba(176, 217, 68, 0.1);
-        border-color: #b0d944;
-      }
-
-      .startup-button.secondary {
-        background: rgba(0, 0, 0, 0.3);
-        border-color: #666;
-      }
-
-      .startup-button.secondary:hover {
-        border-color: #b0d944;
-      }
-
-      .button-icon {
-        font-size: 2rem;
-        flex-shrink: 0;
-      }
-
-      .button-text {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .button-text strong {
-        font-size: 1.2rem;
-        margin-bottom: 0.25rem;
-      }
-
-      .button-text small {
-        color: #888;
-        font-size: 0.9rem;
-      }
-
-      .invite-form {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-        width: 100%;
-      }
-
-      .input-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      .input-group label {
-        color: #b0d944;
-        font-size: 1rem;
-        font-weight: bold;
-        text-align: left;
-      }
-
-      .input-group input {
-        padding: 1rem;
-        font-size: 1rem;
-        border-radius: 6px;
-        background: rgba(0, 0, 0, 0.3);
-        border: 2px solid #666;
-        transition: border-color 0.3s ease;
-      }
-
-      .input-group input:focus {
-        border-color: #b0d944;
-        outline: none;
-      }
-
-      .button-group {
-        display: flex;
-        gap: 1rem;
-        justify-content: space-between;
-      }
-
-      .button-group .startup-button {
-        flex: 1;
-        justify-content: center;
-        padding: 1rem;
-      }
-
-      .status-message {
-        margin-top: 1rem;
-        padding: 0.75rem;
-        border-radius: 6px;
-        font-size: 0.9rem;
-        min-height: 1.2rem;
-      }
-
-      .status-message.info {
-        background: rgba(176, 217, 68, 0.1);
-        color: #b0d944;
-        border: 1px solid #b0d944;
-      }
-
-      .status-message.error {
-        background: rgba(255, 107, 107, 0.1);
-        color: #ff6b6b;
-        border: 1px solid #ff6b6b;
-      }
-
-      /* Main app container - hidden initially */
-      #main-app {
-        display: none;
-        flex-direction: column;
-        height: 100vh;
-        width: 100%;
-      }
-
-      #main-app.active {
-        display: flex;
-      }
-
-      /* Loader styles */
-      #loader {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: #001601;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        transition: opacity 0.5s ease;
-      }
-
-      #loader.hidden {
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      .loader-spinner {
-        width: 50px;
-        height: 50px;
-        border: 3px solid #b0d94413;
-        border-top: 3px solid #b0d944;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin-bottom: 1rem;
-      }
-
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-
-      .loader-text {
-        color: #b0d944;
-        font-size: 1.2rem;
-        text-align: center;
-      }
-
-      .loader-subtext {
-        color: #888;
-        font-size: 0.9rem;
-        margin-top: 0.5rem;
-        text-align: center;
-      }
-
-      #upload-container {
-        display: flex;
-        flex: 1 1 100%;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        max-width: 600px;
-        padding: 2rem;
-      }
-
-      #upload-form {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        gap: 1rem;
-      }
-
-      #file-input-container {
-        position: relative;
-        width: 100%;
-        min-height: 200px;
-        border: 2px dashed #b0d944;
-        border-radius: 8px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: border-color 0.3s ease;
-        overflow: hidden;
-      }
-
-      #file-input-container:hover {
-        border-color: #d4f444;
-      }
-
-      #file-input-container.dragover {
-        border-color: #d4f444;
-        background-color: #b0d94413;
-      }
-
-      #file-input-container.has-preview {
-        cursor: default;
-      }
-
-      #file-input {
-        position: absolute;
-        opacity: 0;
-        width: 100%;
-        height: 100%;
-        cursor: pointer;
-      }
-
-      #upload-info {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-      }
-
-      #upload-icon {
-        font-size: 3rem;
-        color: #b0d944;
-        margin-bottom: 1rem;
-      }
-
-      #upload-text {
-        color: #b0d944;
-        text-align: center;
-        margin-bottom: 0.5rem;
-      }
-
-      #file-info {
-        color: #888;
-        font-size: 0.9rem;
-        text-align: center;
-      }
-
-      #upload-button {
-        align-self: center;
-        margin-top: 1rem;
-        cursor: pointer;
-      }
-
-      #upload-button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      #preview {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #000;
-      }
-
-      #preview img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-        border-radius: 4px;
-      }
-
-      #preview-overlay {
-        position: absolute;
-        top: 0.5rem;
-        right: 0.5rem;
-        background: rgba(0, 0, 0, 0.7);
-        color: #b0d944;
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
-        font-size: 0.8rem;
-        cursor: pointer;
-      }
-
-      #preview-overlay:hover {
-        background: rgba(0, 0, 0, 0.9);
-      }
-
-      #status {
-        margin-top: 1rem;
-        text-align: center;
-        color: #b0d944;
-      }
-
-      .error {
-        color: #ff6b6b !important;
-      }
-
-      .success {
-        color: #51cf66 !important;
-      }
-
-      #tabs {
-        display: flex;
-        width: 100%;
-        justify-content: end;
-        border-bottom: 1px solid #b0d944;
-      }
-
-      .tab {
-        padding: 0.75rem 1.5rem;
-        cursor: pointer;
-        border: 1px solid transparent;
-        border-bottom: none;
-        color: #b0d944;
-        transition: all 0.3s ease;
-      }
-
-      .tab.active {
-        background: #b0d944;
-        color: #001601;
-        border-color: #b0d944;
-      }
-
-      .tab:hover:not(.active) {
-        background: #b0d94413;
-      }
-
-      #gallery {
-        display: none;
-        flex: 1 1 100%;
-        flex-direction: column;
-        width: 100%;
-        max-width: 800px;
-        padding: 2rem;
-        overflow-y: auto;
-      }
-
-      /* Custom scrollbar for gallery */
-      #gallery::-webkit-scrollbar {
-        width: 8px;
-      }
-
-      #gallery::-webkit-scrollbar-track {
-        background: rgba(176, 217, 68, 0.1);
-        border-radius: 4px;
-      }
-
-      #gallery::-webkit-scrollbar-thumb {
-        background: #b0d944;
-        border-radius: 4px;
-        border: 1px solid rgba(0, 0, 0, 0.2);
-      }
-
-      #gallery::-webkit-scrollbar-thumb:hover {
-        background: #d4f444;
-      }
-
-      /* Firefox scrollbar styling */
-      #gallery {
-        scrollbar-width: thin;
-        scrollbar-color: #b0d944 rgba(176, 217, 68, 0.1);
-      }
-
-      #gallery.active {
-        display: flex;
-      }
-
-      #gallery-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-      }
-
-      #gallery-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 1rem;
-        max-height: 100%;
-        overflow-y: auto;
-      }
-
-      .gif-item {
-        border: 1px solid #b0d944;
-        border-radius: 4px;
-        padding: 0.5rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-align: center;
-      }
-
-      .gif-item:hover {
-        border-color: #d4f444;
-        background: #b0d94413;
-      }
-
-      .gif-item img {
-        width: 100%;
-        height: 150px;
-        object-fit: cover;
-        border-radius: 2px;
-        margin-bottom: 0.5rem;
-        cursor: grab;
-        transition: transform 0.2s ease;
-      }
-
-      .gif-item img:active {
-        cursor: grabbing;
-        transform: scale(0.98);
-      }
-
-      .gif-item img:hover {
-        transform: scale(1.02);
-      }
-
-      .gif-item .filename {
-        font-size: 0.8rem;
-        color: #b0d944;
-        word-break: break-all;
-      }
-
-      #gallery-empty {
-        text-align: center;
-        color: #888;
-        padding: 2rem;
-      }
-
-      #refresh-button {
-        margin-left: 1rem;
-        cursor: pointer;
-      }
-
-      #key-display {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-family: monospace;
-        font-size: 0.8rem;
-        color: #b0d944;
-        -webkit-app-region: no-drag;
-      }
-
-      #key-label {
-        font-weight: bold;
-      }
-
-      #key-value {
-        background: rgba(0, 0, 0, 0.3);
-        padding: 0.2rem 1rem;
-        border-radius: 3px;
-        border: 1px solid #b0d944;
-        font-family: monospace;
-        font-size: 0.7rem;
-        max-width: 600px;
-      }
-
-      /* Modal styles */
-      .modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10000;
-        backdrop-filter: blur(2px);
-      }
-
-      .modal.hidden {
-        display: none;
-      }
-
-      .modal-content {
-        background: #001601;
-        border: 2px solid #b0d944;
-        border-radius: 8px;
-        padding: 0;
-        max-width: 500px;
-        width: 90%;
-        max-height: 80vh;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-      }
-
-      .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid #b0d944;
-        background: rgba(176, 217, 68, 0.1);
-      }
-
-      .modal-header h3 {
-        margin: 0;
-        color: #b0d944;
-        font-size: 1.2rem;
-      }
-
-      .close-button {
-        background: transparent;
-        border: 1px solid #b0d944;
-        color: #b0d944;
-        padding: 0.3rem 0.6rem;
-        font-size: 1rem;
-        cursor: pointer;
-        border-radius: 3px;
-        transition: all 0.3s ease;
-      }
-
-      .close-button:hover {
-        background: #b0d944;
-        color: #001601;
-      }
-
-      .modal-body {
-        padding: 1.5rem;
-      }
-
-      .modal-body p {
-        color: #b0d944;
-        margin-bottom: 1rem;
-        line-height: 1.4;
-      }
-
-      .invite-container {
-        display: flex;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
-      }
-
-      #invite-link {
-        flex: 1;
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px solid #b0d944;
-        color: #b0d944;
-        padding: 0.5rem;
-        font-family: monospace;
-        font-size: 0.8rem;
-        border-radius: 3px;
-        word-break: break-all;
-      }
-
-      .copy-button {
-        background: #b0d944;
-        color: #001601;
-        border: 1px solid #b0d944;
-        padding: 0.5rem 1rem;
-        font-family: monospace;
-        font-size: 0.8rem;
-        cursor: pointer;
-        border-radius: 3px;
-        transition: all 0.3s ease;
-        white-space: nowrap;
-      }
-
-      .copy-button:hover {
-        background: #d4f444;
-        border-color: #d4f444;
-      }
-
-      .invite-status {
-        text-align: center;
-        font-size: 0.9rem;
-        min-height: 1.2rem;
-      }
-
-      .invite-status.success {
-        color: #51cf66;
-      }
-
-      .invite-status.error {
-        color: #ff6b6b;
-      }
-    </style>
-    <script type="module" src="./app.js"></script>
-  </head>
-  <body>
-    <!-- Loader -->
-    <div id="loader">
-      <div class="loader-spinner"></div>
-      <div class="loader-text">Initializing Keet GIFs</div>
-      <div class="loader-subtext">Setting up Hyperdrive...</div>
-    </div>
-
-    <div id="titlebar">
-      <pear-ctrl></pear-ctrl>
-    </div>
-
-    <!-- Startup UI -->
-    <div id="startup-container">
-      <!-- Content will be dynamically inserted by StartupUI -->
-    </div>
-
-    <!-- Main App (hidden initially) -->
-    <div id="main-app">
-      <!-- Invite Modal -->
-      <div id="invite-modal" class="modal hidden">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>Invite Link</h3>
-            <button id="close-modal" class="close-button">✕</button>
-          </div>
-          <div class="modal-body">
-            <p>
-              Share this invite link with others to let them join your GIF
-              collection:
-            </p>
-            <div class="invite-container">
-              <input type="text" id="invite-link" readonly />
-              <button id="copy-invite" class="copy-button">Copy</button>
-            </div>
-            <div id="invite-status" class="invite-status"></div>
-          </div>
+    <head>
+        <style>
+            pear-ctrl[data-platform="darwin"] {
+                margin-top: 12px;
+                margin-left: 10px;
+                height: 12px;
+            }
+
+            #titlebar {
+                -webkit-app-region: drag;
+                height: 30px;
+                width: 100%;
+                position: fixed;
+                left: 0;
+                top: 0;
+                background-color: #b0d94413;
+                filter: drop-shadow(2px 10px 6px #888);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 10px;
+            }
+
+            button,
+            input {
+                all: unset;
+                border: 1px ridge #b0d944;
+                background: #000;
+                color: #b0d944;
+                padding: 0.45rem;
+                font-family: monospace;
+                font-size: 1rem;
+                line-height: 1rem;
+            }
+
+            body {
+                background-color: #001601;
+                font-family: monospace;
+                margin: 0;
+                padding: 0;
+            }
+
+            main {
+                display: flex;
+                height: 100vh;
+                color: white;
+                align-items: center;
+                flex-flow: column nowrap;
+                margin: 0;
+                padding: 0;
+            }
+
+            .hidden {
+                display: none !important;
+            }
+
+            /* Startup UI Styles */
+            #startup-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                width: 100%;
+                padding: 2rem;
+                box-sizing: border-box;
+            }
+
+            .startup-content {
+                max-width: 500px;
+                width: 100%;
+                text-align: center;
+            }
+
+            .startup-header h1 {
+                color: #b0d944;
+                font-size: 3rem;
+                margin: 0 0 1rem 0;
+                text-shadow: 0 0 10px rgba(176, 217, 68, 0.5);
+            }
+
+            .startup-header p {
+                color: #888;
+                font-size: 1.1rem;
+                margin: 0 0 3rem 0;
+                line-height: 1.4;
+            }
+
+            .startup-options {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .startup-button {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: 1.5rem;
+                border: 2px solid #b0d944;
+                background: rgba(0, 0, 0, 0.3);
+                color: #b0d944;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                border-radius: 8px;
+                text-align: left;
+            }
+
+            .startup-button:hover {
+                background: rgba(176, 217, 68, 0.1);
+                border-color: #d4f444;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(176, 217, 68, 0.2);
+            }
+
+            .startup-button.primary {
+                background: rgba(176, 217, 68, 0.1);
+                border-color: #b0d944;
+            }
+
+            .startup-button.secondary {
+                background: rgba(0, 0, 0, 0.3);
+                border-color: #666;
+            }
+
+            .startup-button.secondary:hover {
+                border-color: #b0d944;
+            }
+
+            .button-icon {
+                font-size: 2rem;
+                flex-shrink: 0;
+            }
+
+            .button-text {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .button-text strong {
+                font-size: 1.2rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .button-text small {
+                color: #888;
+                font-size: 0.9rem;
+            }
+
+            .invite-form {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+                width: 100%;
+            }
+
+            .input-group {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .input-group label {
+                color: #b0d944;
+                font-size: 1rem;
+                font-weight: bold;
+                text-align: left;
+            }
+
+            .input-group input {
+                padding: 1rem;
+                font-size: 1rem;
+                border-radius: 6px;
+                background: rgba(0, 0, 0, 0.3);
+                border: 2px solid #666;
+                transition: border-color 0.3s ease;
+            }
+
+            .input-group input:focus {
+                border-color: #b0d944;
+                outline: none;
+            }
+
+            .button-group {
+                display: flex;
+                gap: 1rem;
+                justify-content: space-between;
+            }
+
+            .button-group .startup-button {
+                flex: 1;
+                justify-content: center;
+                padding: 1rem;
+            }
+
+            .status-message {
+                margin-top: 1rem;
+                padding: 0.75rem;
+                border-radius: 6px;
+                font-size: 0.9rem;
+                min-height: 1.2rem;
+            }
+
+            .status-message.info {
+                background: rgba(176, 217, 68, 0.1);
+                color: #b0d944;
+                border: 1px solid #b0d944;
+            }
+
+            .status-message.error {
+                background: rgba(255, 107, 107, 0.1);
+                color: #ff6b6b;
+                border: 1px solid #ff6b6b;
+            }
+
+            /* Main app container - hidden initially */
+            #main-app {
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                width: 100%;
+            }
+
+            /* Loader styles */
+            #loader {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background-color: #001601;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                transition: opacity 0.5s ease;
+            }
+
+            #loader.hidden {
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            .loader-spinner {
+                width: 50px;
+                height: 50px;
+                border: 3px solid #b0d94413;
+                border-top: 3px solid #b0d944;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin-bottom: 1rem;
+            }
+
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .loader-text {
+                color: #b0d944;
+                font-size: 1.2rem;
+                text-align: center;
+            }
+
+            .loader-subtext {
+                color: #888;
+                font-size: 0.9rem;
+                margin-top: 0.5rem;
+                text-align: center;
+            }
+
+            #upload-container {
+                display: none;
+                flex: 1 1 100%;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                max-width: 600px;
+                padding: 2rem;
+            }
+
+            #upload-form {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                gap: 1rem;
+            }
+
+            #file-input-container {
+                position: relative;
+                width: 100%;
+                min-height: 200px;
+                border: 2px dashed #b0d944;
+                border-radius: 8px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: border-color 0.3s ease;
+                overflow: hidden;
+            }
+
+            #file-input-container:hover {
+                border-color: #d4f444;
+            }
+
+            #file-input-container.dragover {
+                border-color: #d4f444;
+                background-color: #b0d94413;
+            }
+
+            #file-input-container.has-preview {
+                cursor: default;
+            }
+
+            #file-input {
+                position: absolute;
+                opacity: 0;
+                width: 100%;
+                height: 100%;
+                cursor: pointer;
+            }
+
+            #upload-info {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #upload-icon {
+                font-size: 3rem;
+                color: #b0d944;
+                margin-bottom: 1rem;
+            }
+
+            #upload-text {
+                color: #b0d944;
+                text-align: center;
+                margin-bottom: 0.5rem;
+            }
+
+            #file-info {
+                color: #888;
+                font-size: 0.9rem;
+                text-align: center;
+            }
+
+            #upload-button {
+                align-self: center;
+                margin-top: 1rem;
+                cursor: pointer;
+            }
+
+            #upload-button:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            #preview {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #000;
+            }
+
+            #preview img {
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
+                border-radius: 4px;
+            }
+
+            #preview-overlay {
+                position: absolute;
+                top: 0.5rem;
+                right: 0.5rem;
+                background: rgba(0, 0, 0, 0.7);
+                color: #b0d944;
+                padding: 0.25rem 0.5rem;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                cursor: pointer;
+            }
+
+            #preview-overlay:hover {
+                background: rgba(0, 0, 0, 0.9);
+            }
+
+            #status {
+                margin-top: 1rem;
+                text-align: center;
+                color: #b0d944;
+            }
+
+            .error {
+                color: #ff6b6b !important;
+            }
+
+            .success {
+                color: #51cf66 !important;
+            }
+
+            #tabs {
+                display: flex;
+                width: 100%;
+                justify-content: end;
+                border-bottom: 1px solid #b0d944;
+            }
+
+            .tab {
+                padding: 0.75rem 1.5rem;
+                cursor: pointer;
+                border: 1px solid transparent;
+                border-bottom: none;
+                color: #b0d944;
+                transition: all 0.3s ease;
+            }
+
+            .tab.active {
+                background: #b0d944;
+                color: #001601;
+                border-color: #b0d944;
+            }
+
+            .tab:hover:not(.active) {
+                background: #b0d94413;
+            }
+
+            #gallery {
+                display: flex;
+                flex: 1 1 100%;
+                flex-direction: column;
+                width: 100%;
+                max-width: 800px;
+                padding: 2rem;
+                overflow-y: auto;
+            }
+
+            /* Custom scrollbar for gallery */
+            #gallery::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            #gallery::-webkit-scrollbar-track {
+                background: rgba(176, 217, 68, 0.1);
+                border-radius: 4px;
+            }
+
+            #gallery::-webkit-scrollbar-thumb {
+                background: #b0d944;
+                border-radius: 4px;
+                border: 1px solid rgba(0, 0, 0, 0.2);
+            }
+
+            #gallery::-webkit-scrollbar-thumb:hover {
+                background: #d4f444;
+            }
+
+            /* Firefox scrollbar styling */
+            #gallery {
+                scrollbar-width: thin;
+                scrollbar-color: #b0d944 rgba(176, 217, 68, 0.1);
+            }
+
+            #gallery.active {
+                display: flex;
+            }
+
+            #gallery-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+            }
+
+            #gallery-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 1rem;
+                max-height: 100%;
+                overflow-y: auto;
+            }
+
+            .gif-item {
+                border: 1px solid #b0d944;
+                border-radius: 4px;
+                padding: 0.5rem;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                text-align: center;
+            }
+
+            .gif-item:hover {
+                border-color: #d4f444;
+                background: #b0d94413;
+            }
+
+            .gif-item img {
+                width: 100%;
+                height: 150px;
+                object-fit: cover;
+                border-radius: 2px;
+                margin-bottom: 0.5rem;
+                cursor: grab;
+                transition: transform 0.2s ease;
+            }
+
+            .gif-item img:active {
+                cursor: grabbing;
+                transform: scale(0.98);
+            }
+
+            .gif-item img:hover {
+                transform: scale(1.02);
+            }
+
+            .gif-item .filename {
+                font-size: 0.8rem;
+                color: #b0d944;
+                word-break: break-all;
+            }
+
+            #gallery-empty {
+                text-align: center;
+                color: #888;
+                padding: 2rem;
+            }
+
+            #refresh-button {
+                margin-left: 1rem;
+                cursor: pointer;
+            }
+
+            #key-display {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-family: monospace;
+                font-size: 0.8rem;
+                color: #b0d944;
+                -webkit-app-region: no-drag;
+            }
+
+            #key-label {
+                font-weight: bold;
+            }
+
+            #key-value {
+                background: rgba(0, 0, 0, 0.3);
+                padding: 0.2rem 1rem;
+                border-radius: 3px;
+                border: 1px solid #b0d944;
+                font-family: monospace;
+                font-size: 0.7rem;
+                max-width: 600px;
+            }
+
+            /* Modal styles */
+            .modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                backdrop-filter: blur(2px);
+            }
+
+            .modal.hidden {
+                display: none;
+            }
+
+            .modal-content {
+                background: #001601;
+                border: 2px solid #b0d944;
+                border-radius: 8px;
+                padding: 0;
+                max-width: 500px;
+                width: 90%;
+                max-height: 80vh;
+                overflow: hidden;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            }
+
+            .modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid #b0d944;
+                background: rgba(176, 217, 68, 0.1);
+            }
+
+            .modal-header h3 {
+                margin: 0;
+                color: #b0d944;
+                font-size: 1.2rem;
+            }
+
+            .close-button {
+                background: transparent;
+                border: 1px solid #b0d944;
+                color: #b0d944;
+                padding: 0.3rem 0.6rem;
+                font-size: 1rem;
+                cursor: pointer;
+                border-radius: 3px;
+                transition: all 0.3s ease;
+            }
+
+            .close-button:hover {
+                background: #b0d944;
+                color: #001601;
+            }
+
+            .modal-body {
+                padding: 1.5rem;
+            }
+
+            .modal-body p {
+                color: #b0d944;
+                margin-bottom: 1rem;
+                line-height: 1.4;
+            }
+
+            .invite-container {
+                display: flex;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+            }
+
+            #invite-link {
+                flex: 1;
+                background: rgba(0, 0, 0, 0.3);
+                border: 1px solid #b0d944;
+                color: #b0d944;
+                padding: 0.5rem;
+                font-family: monospace;
+                font-size: 0.8rem;
+                border-radius: 3px;
+                word-break: break-all;
+            }
+
+            .copy-button {
+                background: #b0d944;
+                color: #001601;
+                border: 1px solid #b0d944;
+                padding: 0.5rem 1rem;
+                font-family: monospace;
+                font-size: 0.8rem;
+                cursor: pointer;
+                border-radius: 3px;
+                transition: all 0.3s ease;
+                white-space: nowrap;
+            }
+
+            .copy-button:hover {
+                background: #d4f444;
+                border-color: #d4f444;
+            }
+
+            .invite-status {
+                text-align: center;
+                font-size: 0.9rem;
+                min-height: 1.2rem;
+            }
+
+            .invite-status.success {
+                color: #51cf66;
+            }
+
+            .invite-status.error {
+                color: #ff6b6b;
+            }
+        </style>
+        <script type="module" src="./app.js"></script>
+    </head>
+    <body>
+        <!-- Loader -->
+        <div id="loader">
+            <div class="loader-spinner"></div>
+            <div class="loader-text">Initializing Keet GIFs</div>
+            <div class="loader-subtext">Setting up Hyperdrive...</div>
         </div>
-      </div>
 
-      <main>
-        <div id="upload-container">
-          <form id="upload-form">
-            <div id="file-input-container">
-              <input type="file" id="file-input" accept=".gif,.webp" />
-              <div id="upload-info">
-                <div id="upload-icon">📁</div>
-                <div id="upload-text">Click to select or drag & drop</div>
-                <div id="file-info">Supports GIF and WebP files</div>
-              </div>
-              <div id="preview" class="hidden"></div>
+        <div id="titlebar">
+            <pear-ctrl></pear-ctrl>
+        </div>
+
+        <!-- Main App (hidden initially) -->
+        <div id="main-app">
+            <!-- Invite Modal -->
+            <div id="invite-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Invite Link</h3>
+                        <button id="close-modal" class="close-button">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            Share this invite link with others to let them join
+                            your GIF collection:
+                        </p>
+                        <div class="invite-container">
+                            <input type="text" id="invite-link" readonly />
+                            <button id="copy-invite" class="copy-button">
+                                Copy
+                            </button>
+                        </div>
+                        <div id="invite-status" class="invite-status"></div>
+                    </div>
+                </div>
             </div>
 
-            <button type="submit" id="upload-button" disabled>
-              Upload GIF/WebP
-            </button>
+            <main>
+                <div id="upload-container">
+                    <form id="upload-form">
+                        <div id="file-input-container">
+                            <input
+                                type="file"
+                                id="file-input"
+                                accept=".gif,.webp"
+                            />
+                            <div id="upload-info">
+                                <div id="upload-icon">📁</div>
+                                <div id="upload-text">
+                                    Click to select or drag & drop
+                                </div>
+                                <div id="file-info">
+                                    Supports GIF and WebP files
+                                </div>
+                            </div>
+                            <div id="preview" class="hidden"></div>
+                        </div>
 
-            <div id="status"></div>
-          </form>
-        </div>
+                        <button type="submit" id="upload-button" disabled>
+                            Upload GIF/WebP
+                        </button>
 
-        <div id="gallery">
-          <div id="gallery-header">
-            <h3>Uploaded GIFs & WebPs</h3>
-            <button id="refresh-button">Refresh</button>
-          </div>
-          <div id="gallery-grid"></div>
-          <div id="gallery-empty">
-            No GIFs uploaded yet. Upload your first one!
-          </div>
-        </div>
+                        <div id="status"></div>
+                    </form>
+                </div>
 
-        <div id="tabs">
-          <div class="tab active" data-tab="upload">Upload</div>
-          <div class="tab" data-tab="gallery">Gallery</div>
-          <div class="tab" id="invite-button">Invite</div>
+                <div id="gallery">
+                    <div id="gallery-header">
+                        <h3>Uploaded GIFs & WebPs</h3>
+                        <button id="refresh-button">Refresh</button>
+                    </div>
+                    <div id="gallery-grid"></div>
+                    <div id="gallery-empty">
+                        No GIFs uploaded yet. Upload your first one!
+                    </div>
+                </div>
+
+                <div id="tabs">
+                    <div class="tab active" data-tab="gallery">Gallery</div>
+                    <div class="tab" data-tab="upload">Upload</div>
+                    <div class="tab" id="invite-button">Invite</div>
+                </div>
+            </main>
         </div>
-      </main>
-    </div>
-  </body>
+    </body>
 </html>

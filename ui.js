@@ -28,10 +28,14 @@ class UI {
       inviteStatus: document.querySelector("#invite-status"),
     };
 
-    this.currentTab = "upload";
+    this.currentTab = "gallery";
 
     this.initializeEventListeners();
-    this.hideLoader();
+
+    setTimeout(() => {
+      this.loadGallery();
+      this.hideLoader();
+    }, 100);
   }
 
   hideLoader() {
@@ -44,27 +48,27 @@ class UI {
     // Form upload handler
     this.elements.uploadForm.addEventListener(
       "submit",
-      this.handleUpload.bind(this)
+      this.handleUpload.bind(this),
     );
 
     // File input change handler
     this.elements.fileInput.addEventListener(
       "change",
-      this.handleFileSelect.bind(this)
+      this.handleFileSelect.bind(this),
     );
 
     // Drag and drop handlers
     this.elements.fileInputContainer.addEventListener(
       "dragover",
-      this.handleDragOver.bind(this)
+      this.handleDragOver.bind(this),
     );
     this.elements.fileInputContainer.addEventListener(
       "dragleave",
-      this.handleDragLeave.bind(this)
+      this.handleDragLeave.bind(this),
     );
     this.elements.fileInputContainer.addEventListener(
       "drop",
-      this.handleDrop.bind(this)
+      this.handleDrop.bind(this),
     );
 
     // Paste handler for cross-window sharing
@@ -442,7 +446,7 @@ class UI {
         e.dataTransfer.setData("text/uri-list", blobUrl);
         e.dataTransfer.setData(
           "text/html",
-          `<img src="${blobUrl}" alt="${key}">`
+          `<img src="${blobUrl}" alt="${key}">`,
         );
 
         // Set the drag image
@@ -756,7 +760,7 @@ class UI {
                 await navigator.clipboard.write([clipboardItem]);
                 this.setStatus(
                   `Copied ${filename} to clipboard! (Note: Animation lost in conversion)`,
-                  "success"
+                  "success",
                 );
 
                 setTimeout(() => {
@@ -764,7 +768,7 @@ class UI {
                 }, 2000);
 
                 console.log(
-                  `Copied ${filename} to clipboard (converted to PNG)`
+                  `Copied ${filename} to clipboard (converted to PNG)`,
                 );
                 resolve();
               }, "image/png");
@@ -887,7 +891,7 @@ class UI {
         ...Object.keys(sessionStorage),
       ];
       const sharedImageKeys = keys.filter((key) =>
-        key.startsWith("shared-image-")
+        key.startsWith("shared-image-"),
       );
 
       if (sharedImageKeys.length > 0) {
